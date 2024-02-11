@@ -101,8 +101,6 @@ def knee_extension(landmarks):
     
     return errors
 
-
-
 curr_pos = 'down'
 reps = 0
 def dumbell_thrust(landmarks):
@@ -190,7 +188,6 @@ def external_rotation(landmarks):
         if left_wrist.z > left_elbow.z:
             errors.append("Keep left wrist perpendicular to elbow")
     
-    
     return errors
 
 def rotator_cuff(landmarks):
@@ -231,13 +228,57 @@ def rotator_cuff(landmarks):
             
     return errors
 
+def deadlift(landmarks):
+    errors = []
+    left_ankle = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
+    right_ankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value]
 
+    left_knee = landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value]
+    right_knee = landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value]
 
+    left_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
+    right_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value]
 
+    left_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+    right_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
 
+    left_knee_angle = calc_angle(left_ankle, left_knee, left_hip)
+    right_knee_angle = calc_angle(right_ankle, right_knee, right_hip)
 
+    if left_knee_angle < 80 or right_knee_angle < 80:
+        errors.append("Don't bend knees too much")
+    
+    if abs(calc_dist(left_ankle, right_ankle) - calc_dist(left_hip, right_hip)) > 0.1:
+        errors.append("Keep legs hip width apart")
+    
+    if abs(calc_dist(left_shoulder, right_shoulder) - calc_dist(left_hip, right_hip)) > 0.1:
+        errors.append("Keep shoulders parallel to hips")
+    
+    return errors
 
-modes = ["knee_extension", "external_rotation", "dumbell_thrust", "rotator_cuff"]
+def planks(landmarks):
+    errors = []
+    left_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+    right_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
+
+    left_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
+    right_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value]
+
+    left_ankle = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
+    right_ankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value]
+
+    if abs(left_shoulder.y - right_shoulder.y) > 0.1:
+        errors.append("Keep your shoulders parallel to ground")
+
+    if abs(left_hip.y - right_hip.y) > 0.1:
+        errors.append("Keep your hips parallel to ground")
+
+    if abs(left_ankle.y - right_ankle.y) > 0.1:
+        errors.append("Keep your ankles parallel to ground")
+        
+    return errors
+
+modes = ["knee_extension", "external_rotation", "dumbell_thrust", "rotator_cuff", "deadlift", "planks"]
 
 curr_mode = "knee_extension"
 
@@ -279,8 +320,12 @@ def generate_frames():
                     errors = external_rotation(landmarks)
                 elif curr_mode == "dumbell_thrust":
                     errors = dumbell_thrust(landmarks)
-                else:
+                elif curr_mode == "rotator_cuff":
                     errors = rotator_cuff(landmarks)
+                elif curr_mode == "deadlift":
+                    errors = deadlift(landmarks)
+                else:
+                    errors = planks(landmarks)
 
 
                 for i in range(len(errors)):
